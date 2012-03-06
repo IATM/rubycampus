@@ -1,0 +1,4 @@
+Volumen hipocampo izquierdo: 
+7500 2700.016630 
+Volumen hipocampo derecho: 
+6416 2309.774226 
