@@ -42,6 +42,8 @@ narr.indices do |n,m|
   val=(narr[n,m])
   canvas[n,m] = PNG::Color.new(val,val,val)
 end
+canvas.line 50, 200, 300, 200, PNG::Color::Green
+canvas.line 200, 100, 200, 350, PNG::Color::Green
 
 png = PNG.new canvas
 png.save 'test.png'
