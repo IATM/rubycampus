@@ -29,21 +29,21 @@ class NArray
 end
 
 # Read file:
-obj = NIFTI::NObject.new("samples/slice_76.nii", :narray => true)
+brain = NIFTI::NObject.new("samples/slice_76.nii", :narray => true)
 
-width = obj.header["dim"][1]
-height = obj.header["dim"][2]
+width = brain.header["dim"][1]
+height = brain.header["dim"][2]
 
-narr = obj.image
+brain_img = brain.image
 
 canvas = PNG::Canvas.new(width, height)
 
-narr.indices do |n,m|
-  val=(narr[n,m])
+brain_img.indices do |n,m|
+  val=(brain_img[n,m])
   canvas[n,m] = PNG::Color.new(val,val,val)
 end
-canvas.line 50, 200, 300, 200, PNG::Color::Green
-canvas.line 200, 100, 200, 350, PNG::Color::Green
+canvas.line 150, 200, 250, 200, PNG::Color::Cyan
+canvas.line 200, 150, 200, 250, PNG::Color::Cyan
 
 png = PNG.new canvas
 png.save 'test.png'
