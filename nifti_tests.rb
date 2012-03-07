@@ -40,7 +40,7 @@ canvas = PNG::Canvas.new(width, height)
 
 narr.indices do |n,m|
   val=(narr[n,m])
-  canvas[m,n] = PNG::Color.new(val,val,val)
+  canvas[n,m] = PNG::Color.new(val,val,val)
 end
 
 png = PNG.new canvas
