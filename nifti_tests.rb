@@ -63,7 +63,7 @@ def fill_canvas(brain_hash,stats_hash,canvas)
   end
   statsimg.indices do |n,m|
     val=(statsimg[n,m])
-    canvas[n,m] = SegColor if val != 0
+    canvas[n,m] = PNG::Color.new(1,0,0) if val != 0
   end
   return canvas
 end

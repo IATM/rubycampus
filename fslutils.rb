@@ -8,6 +8,7 @@ require 'png'
 
 # Bring OptionParser into the namespace
 require 'optparse'
+
 options = {}
 option_parser = OptionParser.new do |opts|
   
@@ -30,6 +31,8 @@ coord = `fslstats -t #{options[:stats]} -C`.split
 lh = {}
 rh = {}
 axis = ["x", "y", "z"]
+directory_path = `dirname #{options[:stats]}`
+puts directory_path
 
 (0..2).each do |i|
   lh[axis[i]] = coord[i].to_i.round
@@ -39,32 +42,65 @@ end
   rh[axis[i-3]] = coord[i].to_i.round
 end
 
-puts lh.inspect
+def decompress(filename)
+  basename = File.basename(filename, '.nii.gz')
+  dirname = File.dirname(filename)
+  `gzip -d #{filename}`
+  filename_d = dirname+'/'+basename+'.nii'
+  return filename_d
+end
 
-def fsl_roi(file, structure, x, y, z)
+def fsl_roi(file, structure, type, coordinates)
   basename = File.basename(file, '.nii.gz')
   dirname = File.dirname(file)
   filenames = {}
   filenames[:ax] = fn(dirname, basename, structure, 'axial')
   filenames[:sag] = fn(dirname, basename, structure, 'sag')
   filenames[:cor] = fn(dirname, basename, structure, 'cor')
-  `fslroi #{file} #{filenames[:sag]} #{x} 1 0 -1 0 -1`
-  `fslswapdim #{filenames[:sag]} y z x #{filenames[:sag]}`
   
-  `fslroi #{file} #{filenames[:cor]} 0 -1 #{y} 1 0 -1`
-  `fslswapdim #{filenames[:cor]} x z y #{filenames[:cor]}`
-  
-  `fslroi #{file} #{filenames[:ax]} 0 -1 0 -1 #{z} 1`
+  if (type == 'brain')
+    `fslroi #{file} #{filenames[:sag]} #{coordinates["x"]} 1 0 -1 0 -1`
+    `fslswapdim #{filenames[:sag]} y z x #{filenames[:sag]}`
+    decompress(filenames[:sag])
+    
+    `fslroi #{file} #{filenames[:cor]} 0 -1 #{coordinates["y"]} 1 0 -1`
+    `fslswapdim #{filenames[:cor]} x z y #{filenames[:cor]}`
+    decompress(filenames[:cor])
+    
+    `fslroi #{file} #{filenames[:ax]} 0 -1 0 -1 #{coordinates["z"]} 1`
+    decompress(filenames[:ax])
+  elsif (type == 'stats' && structure=='lh')
+    `fslroi #{file} #{filenames[:sag]} #{coordinates["x"]} 1 0 -1 0 -1 0 1`
+    `fslswapdim #{filenames[:sag]} y z x #{filenames[:sag]}`
+    
+    `fslroi #{file} #{filenames[:cor]} 0 -1 #{coordinates["y"]} 1 0 -1 0 1`
+    `fslswapdim #{filenames[:cor]} x z y #{filenames[:cor]}`
+    
+    `fslroi #{file} #{filenames[:ax]} 0 -1 0 -1 #{coordinates["z"]} 1 0 1`
+    elsif (type == 'stats' && structure=='rh')
+      `fslroi #{file} #{filenames[:sag]} #{coordinates["x"]} 1 0 -1 0 -1 1 1`
+      `fslswapdim #{filenames[:sag]} y z x #{filenames[:sag]}`
+
+      `fslroi #{file} #{filenames[:cor]} 0 -1 #{coordinates["y"]} 1 0 -1 1 1`
+      `fslswapdim #{filenames[:cor]} x z y #{filenames[:cor]}`
+
+      `fslroi #{file} #{filenames[:ax]} 0 -1 0 -1 #{coordinates["z"]} 1 1 1`
+    end 
   return filenames
 end
 
 def fn(dirname, basename, structure, orientation)
-  file_name = dirname+'/'+basename+'_'+structure+'_'+orientation+'.nii.gz'
+  if structure == ''
+    file_name = dirname+'/tmp/'+basename+'_'+orientation+'.nii'
+  else
+    file_name = dirname+'/tmp/'+basename+'_'+structure+'_'+orientation+'.nii.gz'
+  end
   return file_name
 end
 
-filenames_brain_lh = fsl_roi(options[:brain], 'lh', lh['x'], lh['y'], lh['z'])
-filenames_stats_lh = fsl_roi(options[:stats], 'lh', lh['x'], lh['y'], lh['z'])
+filenames_brain = fsl_roi(options[:brain], '', 'brain', lh)
+filenames_stats_lh = fsl_roi(options[:stats], 'lh', 'stats', lh)
+filenames_stats_rh = fsl_roi(options[:stats], 'rh', 'stats', rh)
 
 
 #cmd = `du -sh #{brain_file}`
@@ -146,7 +182,7 @@ def fill_crosshair(center=[200,200],size=50,canvas)
   return canvas
 end
 
-def generate_png(brain_hash,stats_hash, crosshair_center, crosshair_size)
+def generate_png(brain_hash,stats_hash, crosshair_center, crosshair_size, structure)
   # Create canvas
   canvas = create_canvas(brain_hash)
   # Fill canvas
@@ -156,22 +192,16 @@ def generate_png(brain_hash,stats_hash, crosshair_center, crosshair_size)
 
   # Create PNG
   png = PNG.new cursor_comp_canvas
-  filename = brain_hash["orientation"] + ".png"
+  filename = structure+'_'+brain_hash["orientation"] + ".png"
   png.save filename
 end
 ############## END METHODS ###############
 
 # Read files :
-def decompress(filename)
-  basename = File.basename(filename, '.nii.gz')
-  dirname = File.dirname(filename)
-  `gzip -d #{filename}`
-  filename_d = dirname+'/'+basename+'.nii'
-  return filename_d
-end
 
-def image_gen(brain_slice, stats_slice, coordinates, orientation)
-  brain_slice_d = decompress(brain_slice)
+
+def image_gen(brain_slice, stats_slice, coordinates, orientation, structure)
+  brain_slice_d = brain_slice
   stats_slice_d = decompress(stats_slice)
   crosshair_size = 50
   brain_hash = read_file(orientation,"brain",brain_slice_d)
@@ -183,14 +213,17 @@ def image_gen(brain_slice, stats_slice, coordinates, orientation)
   elsif orientation == 'sagital'
       hipocenter = [coordinates["y"],coordinates["z"]]
   end
-  puts hipocenter.inspect
   # Create PNG
-  generate_png(brain_hash,stats_hash, hipocenter, crosshair_size)
+  generate_png(brain_hash,stats_hash, hipocenter, crosshair_size, structure)
 end
 
 #Axial
-image_gen(filenames_brain_lh[:ax], filenames_stats_lh[:ax], lh, 'axial')
+image_gen(filenames_brain[:ax], filenames_stats_lh[:ax], lh, 'axial', 'lh')
+image_gen(filenames_brain[:ax], filenames_stats_rh[:ax], rh, 'axial', 'rh')
 #Sagital
-image_gen(filenames_brain_lh[:sag], filenames_stats_lh[:sag], lh, 'sagital')
+image_gen(filenames_brain[:sag], filenames_stats_lh[:sag], lh, 'sagital', 'lh')
+image_gen(filenames_brain[:sag], filenames_stats_rh[:sag], rh, 'sagital', 'rh')
 #Coronal
-image_gen(filenames_brain_lh[:cor], filenames_stats_lh[:cor], lh, 'coronal')
+image_gen(filenames_brain[:cor], filenames_stats_lh[:cor], lh, 'coronal', 'lh')
+image_gen(filenames_brain[:cor], filenames_stats_rh[:cor], rh, 'coronal', 'rh')
+`rm #{directory_path}/tmp/*.nii`
