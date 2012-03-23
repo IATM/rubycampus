@@ -95,8 +95,8 @@ end
 ############## END METHODS ###############
 
 # Read files:
-axial_brain_hash = read_file("axial","brain","samples/slice_76.nii")
-axial_stats_hash = read_file("axial","stats","samples/slice_76_stats.nii")
+axial_brain_hash = read_file("axial","brain","samples/slice_intermedio.nii")
+axial_stats_hash = read_file("axial","stats","samples/slice_intermedio_stats.nii")
 
 axial_hipocenter = [140,250] # donde colocar el crosshairs para esa proyeccion, sacado del archivo generado, por ahora hardcoded
 crosshair_size = 50

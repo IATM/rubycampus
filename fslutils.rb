@@ -5,6 +5,15 @@ require "nifti"
 require "hoe"
 require "inline"
 require 'png'
+require 'prawn'
+
+CursorColor = PNG::Color::Green
+SegColor = PNG::Color::Red
+PatientName = 'Gabriel Castrillon'
+PatientID = 'CC79589827'
+PatientBirthdate = '12/11/1990'
+StudyDate = '03/20/2012'
+AccessionNo = '0033453775'
 
 # Bring OptionParser into the namespace
 require 'optparse'
@@ -69,10 +78,6 @@ filenames_stats_lh = fsl_roi(options[:stats], 'lh', lh['x'], lh['y'], lh['z'])
 
 #cmd = `du -sh #{brain_file}`
 #system(cmd)
-
-#-----------From nifti_tests------------------
-CursorColor = PNG::Color::Green
-SegColor = PNG::Color::Red
 
 # Get indices from nifti files
 class NArray
@@ -194,3 +199,32 @@ image_gen(filenames_brain_lh[:ax], filenames_stats_lh[:ax], lh, 'axial')
 image_gen(filenames_brain_lh[:sag], filenames_stats_lh[:sag], lh, 'sagital')
 #Coronal
 image_gen(filenames_brain_lh[:cor], filenames_stats_lh[:cor], lh, 'coronal')
+
+################# PDF Generation ##################
+Prawn::Document.generate('report.pdf') do |pdf| 
+  # Title
+  pdf.text "Hippocampal Volume Analysis Report" , size: 15, style: :bold, :align => :center
+  pdf.move_down 10
+  
+  # Report Info
+  pdf.formatted_text [ { :text => "Accession No.: ", :styles => [:bold], size: 10 }, { :text => AccessionNo, size: 10 }]
+  pdf.formatted_text [ { :text => "Patient name: ", :styles => [:bold], size: 10 }, { :text => PatientName, :styles => [:bold], size: 10 }]
+  pdf.formatted_text [ { :text => "Patient ID: ", :styles => [:bold], size: 10 }, { :text => PatientID, size: 10 }]
+  pdf.formatted_text [ { :text => "Patient Birthdate: ", :styles => [:bold], size: 10 }, { :text => PatientBirthdate, size: 10 }]
+  pdf.move_down 10
+
+  # SubTitle
+  pdf.text "Right Hippocampus" , size: 13, style: :bold, :align => :center
+  pdf.move_down 5
+  
+  # Images
+  pdf.image "axial.png", :width => 300, :height => 300, :position => 7
+  pdf.move_up 300
+  pdf.image "sagital.png", :width => 200, :height => 150, :position => 310
+  pdf.image "coronal.png", :width => 200, :height => 150, :position => 310
+  pdf.move_down 10
+  
+  # Volumes Table
+  pdf.table([ ["Right Hippocampus volume", "123.45"],
+            ["Left Hippocampus volume", "223.45"]])
+end
