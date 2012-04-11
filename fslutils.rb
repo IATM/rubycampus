@@ -5,6 +5,15 @@ require "nifti"
 require "hoe"
 require "inline"
 require 'png'
+require 'prawn'
+
+CursorColor = PNG::Color::Green
+SegColor = PNG::Color::Red
+PatientName = 'Gabriel Castrillon'
+PatientID = 'CC79589827'
+PatientBirthdate = '12/11/1990'
+StudyDate = '03/20/2012'
+AccessionNo = '0033453775'
 
 # Bring OptionParser into the namespace
 require 'optparse'
@@ -30,7 +39,6 @@ option_parser.parse!
 puts options.inspect
 
 coord = `fslstats -t #{options[:stats]} -C`.split
-
 
 lh = {}
 rh = {}
@@ -114,10 +122,6 @@ filenames_stats_rh = fsl_roi(options[:stats], 'rh', 'stats', rh)
 
 #cmd = `du -sh #{brain_file}`
 #system(cmd)
-
-#-----------From nifti_tests------------------
-CursorColor = PNG::Color::Green
-SegColor = PNG::Color::Red
 
 # Get indices from nifti files
 class NArray
@@ -207,8 +211,6 @@ end
 ############## END METHODS ###############
 
 # Read files :
-
-
 def image_gen(brain_slice, stats_slice, coordinates, orientation, structure)
   brain_slice_d = brain_slice
   stats_slice_d = decompress(stats_slice)
@@ -235,4 +237,46 @@ image_gen(filenames_brain[:sag], filenames_stats_rh[:sag], rh, 'sagital', 'rh')
 #Coronal
 image_gen(filenames_brain[:cor], filenames_stats_lh[:cor], lh, 'coronal', 'lh')
 image_gen(filenames_brain[:cor], filenames_stats_rh[:cor], rh, 'coronal', 'rh')
+
+################# PDF Generation ##################
+Prawn::Document.generate('report.pdf') do |pdf| 
+  # Title
+  pdf.text "Hippocampal Volume Analysis Report" , size: 15, style: :bold, :align => :center
+  pdf.move_down 10
+  
+  # Report Info
+  pdf.formatted_text [ { :text => "Accession No.: ", :styles => [:bold], size: 10 }, { :text => AccessionNo, size: 10 }]
+  pdf.formatted_text [ { :text => "Patient name: ", :styles => [:bold], size: 10 }, { :text => PatientName, :styles => [:bold], size: 10 }]
+  pdf.formatted_text [ { :text => "Patient ID: ", :styles => [:bold], size: 10 }, { :text => PatientID, size: 10 }]
+  pdf.formatted_text [ { :text => "Patient Birthdate: ", :styles => [:bold], size: 10 }, { :text => PatientBirthdate, size: 10 }]
+  pdf.move_down 5
+
+  # SubTitle RH
+  pdf.text "Right Hippocampus" , size: 13, style: :bold, :align => :center
+  pdf.move_down 5
+  
+  # Images RH
+  pdf.image "rh_axial.png", :width => 200, :height => 200, :position => 20
+  pdf.move_up 200
+  pdf.image "rh_sagital.png", :width => 150, :height => 100, :position => 210
+  pdf.image "rh_coronal.png", :width => 150, :height => 100, :position => 210
+  pdf.move_down 5
+  
+  # SubTitle LH
+  pdf.text "Left Hippocampus" , size: 13, style: :bold, :align => :center
+  pdf.move_down 5
+  
+  # Images LH
+  pdf.image "lh_axial.png", :width => 200, :height => 200, :position => 20
+  pdf.move_up 200
+  pdf.image "lh_sagital.png", :width => 150, :height => 100, :position => 210
+  pdf.image "lh_coronal.png", :width => 150, :height => 100, :position => 210
+  pdf.move_down 5
+  
+  
+  # Volumes Table
+  pdf.table([ ["Right Hippocampus volume", "123.45"],
+            ["Left Hippocampus volume", "223.45"]])
+end
+
 `rm #{directory_path}/tmp/*.nii`
