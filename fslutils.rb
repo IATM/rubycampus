@@ -20,19 +20,19 @@ require 'optparse'
 
 options = {}
 option_parser = OptionParser.new do |opts|
-  
+
   # Create a flag
-  opts.on("-b BRAIN") do |brain| 
+  opts.on("-b BRAIN") do |brain|
     options[:brain] = brain
   end
-  
-  opts.on("-s STATS") do |stats| 
+
+  opts.on("-s STATS") do |stats|
     options[:stats] = stats
   end
-  
-  opts.on("-v VOLUMES") do |volumes| 
+
+  opts.on("-v VOLUMES") do |volumes|
     options[:volumes] = volumes
-  end 
+  end
 end
 
 option_parser.parse!
@@ -74,35 +74,35 @@ def fsl_roi(file, structure, type, coordinates)
   filenames[:ax] = fn(dirname, basename, structure, 'axial')
   filenames[:sag] = fn(dirname, basename, structure, 'sag')
   filenames[:cor] = fn(dirname, basename, structure, 'cor')
-  
+
   if (type == 'brain')
     `fslroi #{file} #{filenames[:sag]} #{coordinates["x"]} 1 0 -1 0 -1`
     `fslswapdim #{filenames[:sag]} y z x #{filenames[:sag]}`
     decompress(filenames[:sag])
-    
+
     `fslroi #{file} #{filenames[:cor]} 0 -1 #{coordinates["y"]} 1 0 -1`
     `fslswapdim #{filenames[:cor]} x z y #{filenames[:cor]}`
     decompress(filenames[:cor])
-    
+
     `fslroi #{file} #{filenames[:ax]} 0 -1 0 -1 #{coordinates["z"]} 1`
     decompress(filenames[:ax])
   elsif (type == 'stats' && structure=='lh')
     `fslroi #{file} #{filenames[:sag]} #{coordinates["x"]} 1 0 -1 0 -1 0 1`
     `fslswapdim #{filenames[:sag]} y z x #{filenames[:sag]}`
-    
+
     `fslroi #{file} #{filenames[:cor]} 0 -1 #{coordinates["y"]} 1 0 -1 0 1`
     `fslswapdim #{filenames[:cor]} x z y #{filenames[:cor]}`
-    
+
     `fslroi #{file} #{filenames[:ax]} 0 -1 0 -1 #{coordinates["z"]} 1 0 1`
-    elsif (type == 'stats' && structure=='rh')
-      `fslroi #{file} #{filenames[:sag]} #{coordinates["x"]} 1 0 -1 0 -1 1 1`
-      `fslswapdim #{filenames[:sag]} y z x #{filenames[:sag]}`
+  elsif (type == 'stats' && structure=='rh')
+    `fslroi #{file} #{filenames[:sag]} #{coordinates["x"]} 1 0 -1 0 -1 1 1`
+    `fslswapdim #{filenames[:sag]} y z x #{filenames[:sag]}`
 
-      `fslroi #{file} #{filenames[:cor]} 0 -1 #{coordinates["y"]} 1 0 -1 1 1`
-      `fslswapdim #{filenames[:cor]} x z y #{filenames[:cor]}`
+    `fslroi #{file} #{filenames[:cor]} 0 -1 #{coordinates["y"]} 1 0 -1 1 1`
+    `fslswapdim #{filenames[:cor]} x z y #{filenames[:cor]}`
 
-      `fslroi #{file} #{filenames[:ax]} 0 -1 0 -1 #{coordinates["z"]} 1 1 1`
-    end 
+    `fslroi #{file} #{filenames[:ax]} 0 -1 0 -1 #{coordinates["z"]} 1 1 1`
+  end
   return filenames
 end
 
@@ -139,7 +139,7 @@ class NArray
         new_indices.unshift(s)
         if (new_indices.size == (shape.size - start))
           block.call(new_indices)
-          final << new_indices 
+          final << new_indices
         end
         indices(start, new_indices, final, level-1, &block)
       end
@@ -152,10 +152,10 @@ def read_file(orientation,layer,filepath)
   h = {"orientation" => orientation, "data" => {"brain" => {},"stats" => {} }}
   nobj = NIFTI::NObject.new(filepath, :narray => true)
   # Get image dimensions
-      width = nobj.header["dim"][1]
-      height = nobj.header["dim"][2] 
+  width = nobj.header["dim"][1]
+  height = nobj.header["dim"][2]
   # Get image
-  nobj_img = nobj.image  
+  nobj_img = nobj.image
   # Fill hash
   h["data"][layer]["image_data"] = nobj_img
   h["data"][layer]["dims"] = [width,height]
@@ -166,7 +166,7 @@ def create_canvas(hash)
   width = hash["data"]["brain"]["dims"][0]
   height = hash["data"]["brain"]["dims"][1]
   # Create canvas
-  canvas = PNG::Canvas.new(width, height)
+  return PNG::Canvas.new(width, height)
 end
 
 def fill_canvas(brain_hash,stats_hash,canvas)
@@ -218,11 +218,11 @@ def image_gen(brain_slice, stats_slice, coordinates, orientation, structure)
   brain_hash = read_file(orientation,"brain",brain_slice_d)
   stats_hash = read_file(orientation,"stats",stats_slice_d)
   if orientation == 'axial'
-      hipocenter = [coordinates["x"],coordinates["y"]] 
+    hipocenter = [coordinates["x"],coordinates["y"]]
   elsif orientation == 'coronal'
-      hipocenter = [coordinates["x"],coordinates["z"]]
+    hipocenter = [coordinates["x"],coordinates["z"]]
   elsif orientation == 'sagital'
-      hipocenter = [coordinates["y"],coordinates["z"]]
+    hipocenter = [coordinates["y"],coordinates["z"]]
   end
   # Create PNG
   generate_png(brain_hash,stats_hash, hipocenter, crosshair_size, structure)
@@ -239,11 +239,11 @@ image_gen(filenames_brain[:cor], filenames_stats_lh[:cor], lh, 'coronal', 'lh')
 image_gen(filenames_brain[:cor], filenames_stats_rh[:cor], rh, 'coronal', 'rh')
 
 ################# PDF Generation ##################
-Prawn::Document.generate('report.pdf') do |pdf| 
+Prawn::Document.generate('report.pdf') do |pdf|
   # Title
   pdf.text "Hippocampal Volume Analysis Report" , size: 15, style: :bold, :align => :center
   pdf.move_down 10
-  
+
   # Report Info
   pdf.formatted_text [ { :text => "Accession No.: ", :styles => [:bold], size: 10 }, { :text => AccessionNo, size: 10 }]
   pdf.formatted_text [ { :text => "Patient name: ", :styles => [:bold], size: 10 }, { :text => PatientName, :styles => [:bold], size: 10 }]
@@ -254,29 +254,29 @@ Prawn::Document.generate('report.pdf') do |pdf|
   # SubTitle RH
   pdf.text "Right Hippocampus" , size: 13, style: :bold, :align => :center
   pdf.move_down 5
-  
+
   # Images RH
   pdf.image "rh_axial.png", :width => 200, :height => 200, :position => 20
   pdf.move_up 200
   pdf.image "rh_sagital.png", :width => 150, :height => 100, :position => 210
   pdf.image "rh_coronal.png", :width => 150, :height => 100, :position => 210
   pdf.move_down 5
-  
+
   # SubTitle LH
   pdf.text "Left Hippocampus" , size: 13, style: :bold, :align => :center
   pdf.move_down 5
-  
+
   # Images LH
   pdf.image "lh_axial.png", :width => 200, :height => 200, :position => 20
   pdf.move_up 200
   pdf.image "lh_sagital.png", :width => 150, :height => 100, :position => 210
   pdf.image "lh_coronal.png", :width => 150, :height => 100, :position => 210
   pdf.move_down 5
-  
-  
+
+
   # Volumes Table
   pdf.table([ ["Right Hippocampus volume", "123.45"],
-            ["Left Hippocampus volume", "223.45"]])
+              ["Left Hippocampus volume", "223.45"]])
 end
 
 `rm #{directory_path}/tmp/*.nii`

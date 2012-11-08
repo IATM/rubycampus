@@ -10,22 +10,22 @@ require 'optparse'
 
 options = {}
 option_parser = OptionParser.new do |opts|
-  
-  opts.on("-f DICOMDIR") do |dicomdir| 
+
+  opts.on("-f DICOMDIR") do |dicomdir|
     options[:dicomdir] = dicomdir
   end
-  
-  opts.on("-b BRAIN") do |brain| 
+
+  opts.on("-b BRAIN") do |brain|
     options[:brain] = brain
   end
-  
-  opts.on("-s STATS") do |stats| 
+
+  opts.on("-s STATS") do |stats|
     options[:stats] = stats
   end
-  
-  opts.on("-v VOLUMES") do |volumes| 
+
+  opts.on("-v VOLUMES") do |volumes|
     options[:volumes] = volumes
-  end 
+  end
 end
 
 option_parser.parse!
@@ -106,35 +106,35 @@ def fsl_roi(file, structure, type, coordinates)
   filenames[:ax] = fn(dirname, basename, structure, type, 'axial')
   filenames[:sag] = fn(dirname, basename, structure, type, 'sag')
   filenames[:cor] = fn(dirname, basename, structure, type, 'cor')
-  
+
   if (type == 'brain')
     `fslroi #{file} #{filenames[:sag]} #{coordinates["x"]} 1 0 -1 0 -1`
     `fslswapdim #{filenames[:sag]} y z x #{filenames[:sag]}`
     decompress(filenames[:sag])
-    
+
     `fslroi #{file} #{filenames[:cor]} 0 -1 #{coordinates["y"]} 1 0 -1`
     `fslswapdim #{filenames[:cor]} x z y #{filenames[:cor]}`
     decompress(filenames[:cor])
-    
+
     `fslroi #{file} #{filenames[:ax]} 0 -1 0 -1 #{coordinates["z"]} 1`
     decompress(filenames[:ax])
   elsif (type == 'stats' && structure=='lh')
     `fslroi #{file} #{filenames[:sag]} #{coordinates["x"]} 1 0 -1 0 -1 0 1`
     `fslswapdim #{filenames[:sag]} y z x #{filenames[:sag]}`
-    
+
     `fslroi #{file} #{filenames[:cor]} 0 -1 #{coordinates["y"]} 1 0 -1 0 1`
     `fslswapdim #{filenames[:cor]} x z y #{filenames[:cor]}`
-    
+
     `fslroi #{file} #{filenames[:ax]} 0 -1 0 -1 #{coordinates["z"]} 1 0 1`
-    elsif (type == 'stats' && structure=='rh')
-      `fslroi #{file} #{filenames[:sag]} #{coordinates["x"]} 1 0 -1 0 -1 1 1`
-      `fslswapdim #{filenames[:sag]} y z x #{filenames[:sag]}`
+  elsif (type == 'stats' && structure=='rh')
+    `fslroi #{file} #{filenames[:sag]} #{coordinates["x"]} 1 0 -1 0 -1 1 1`
+    `fslswapdim #{filenames[:sag]} y z x #{filenames[:sag]}`
 
-      `fslroi #{file} #{filenames[:cor]} 0 -1 #{coordinates["y"]} 1 0 -1 1 1`
-      `fslswapdim #{filenames[:cor]} x z y #{filenames[:cor]}`
+    `fslroi #{file} #{filenames[:cor]} 0 -1 #{coordinates["y"]} 1 0 -1 1 1`
+    `fslswapdim #{filenames[:cor]} x z y #{filenames[:cor]}`
 
-      `fslroi #{file} #{filenames[:ax]} 0 -1 0 -1 #{coordinates["z"]} 1 1 1`
-    end 
+    `fslroi #{file} #{filenames[:ax]} 0 -1 0 -1 #{coordinates["z"]} 1 1 1`
+  end
   return filenames
 end
 
@@ -176,7 +176,7 @@ class NArray
         new_indices.unshift(s)
         if (new_indices.size == (shape.size - start))
           block.call(new_indices)
-          final << new_indices 
+          final << new_indices
         end
         indices(start, new_indices, final, level-1, &block)
       end
@@ -189,10 +189,10 @@ def read_file(orientation,layer,filepath)
   h = {"orientation" => orientation, "data" => {"brain" => {},"stats" => {} }}
   nobj = NIFTI::NObject.new(filepath, :narray => true)
   # Get image dimensions
-      width = nobj.header["dim"][1]
-      height = nobj.header["dim"][2] 
+  width = nobj.header["dim"][1]
+  height = nobj.header["dim"][2]
   # Get image
-  nobj_img = nobj.image  
+  nobj_img = nobj.image
   # Fill hash
   h["data"][layer]["image_data"] = nobj_img
   h["data"][layer]["dims"] = [width,height]
@@ -203,7 +203,7 @@ def create_canvas(hash)
   width = hash["data"]["brain"]["dims"][0]
   height = hash["data"]["brain"]["dims"][1]
   # Create canvas
-  canvas = PNG::Canvas.new(width, height)
+  return PNG::Canvas.new(width, height)
 end
 
 def fill_canvas(brain_hash,stats_hash,canvas)
@@ -257,11 +257,11 @@ def image_gen(brain_slice, stats_slice, coordinates, orientation, structure)
   brain_hash = read_file(orientation,"brain",brain_slice_d)
   stats_hash = read_file(orientation,"stats",stats_slice_d)
   if orientation == 'axial'
-      hipocenter = [coordinates["x"],coordinates["y"]] 
+    hipocenter = [coordinates["x"],coordinates["y"]]
   elsif orientation == 'coronal'
-      hipocenter = [coordinates["x"],coordinates["z"]]
+    hipocenter = [coordinates["x"],coordinates["z"]]
   elsif orientation == 'sagital'
-      hipocenter = [coordinates["y"],coordinates["z"]]
+    hipocenter = [coordinates["y"],coordinates["z"]]
   end
   # Create PNG
   generate_png(brain_hash,stats_hash, hipocenter, crosshair_size, structure)
@@ -279,4 +279,3 @@ image_gen(filenames_brain_rh[:cor], filenames_stats_rh[:cor], rh, 'coronal', 'rh
 
 
 #########
-
