@@ -2,10 +2,10 @@
 
 # Requirements
 require "nifti"
-require "hoe"
-require "inline"
+# require "hoe"
+# require "inline"
 require 'png'
-require 'prawn'
+# require 'prawn'
 
 CursorColor = PNG::Color::Green
 SegColor = PNG::Color::Red
@@ -16,7 +16,7 @@ StudyDate = '03/20/2012'
 AccessionNo = '0033453775'
 
 # Bring OptionParser into the namespace
-require 'optparse'
+require 'optparse' # From ruby standard library
 
 options = {}
 option_parser = OptionParser.new do |opts|
