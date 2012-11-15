@@ -124,15 +124,35 @@ hipocampos_nii= decompress(first_images[:firstseg])
 anatomico_3d_nifti = read_nifti(anatomico_nii)
 hipocampos_3d_nifti = read_nifti(hipocampos_nii)
 
-# Select the dimension to process
-sel_dim = 2 # No hay manera de extraer eso del NIFTI. Para axiales parece que 1=sagital, 2=coronal, 3=axial
-# Select slice to process
-sel_slice = 120
+(1..3).each do |sel_dim|
+	# Left Hippocampus
+	sel_slice = lh_cog.values[sel_dim-1]
+ 	lh_anatomico_2d_slice = get_2d_slice(anatomico_3d_nifti, sel_dim, sel_slice)
+	lh_hipocampos_2d_slice = get_2d_slice(hipocampos_3d_nifti, sel_dim, sel_slice)
+	# Overlay hippocampus label map and flip for display
+	lh_labeled_png = generate_label_map_png(lh_anatomico_2d_slice, lh_hipocampos_2d_slice, LHipp_label).flip_horizontally!
+	# Save Labeled PNG
+	lh_labeled_png.save("lh_#{sel_dim}_labeled.png", :interlace => true)
 
-anatomico_2d_slice = get_2d_slice(anatomico_3d_nifti, sel_dim, sel_slice)
-hipocampos_2d_slice = get_2d_slice(hipocampos_3d_nifti, sel_dim, sel_slice)
+	# Right Hippocampus
+	sel_slice = rh_cog.values[sel_dim-1]
+ 	rh_anatomico_2d_slice = get_2d_slice(anatomico_3d_nifti, sel_dim, sel_slice)
+	rh_hipocampos_2d_slice = get_2d_slice(hipocampos_3d_nifti, sel_dim, sel_slice)
+	# Overlay hippocampus label map and flip for display
+	rh_labeled_png = generate_label_map_png(rh_anatomico_2d_slice, rh_hipocampos_2d_slice, RHipp_label).flip_horizontally!
+	# Save Labeled PNG
+	rh_labeled_png.save("rh_#{sel_dim}_labeled.png", :interlace => true)
+end
 
-# Overlay hippocampus label map and flip for display
-labeled_png = generate_label_map_png(anatomico_2d_slice, hipocampos_2d_slice, LHipp_label).flip_horizontally!
-# Save Labeled PNG
-labeled_png.save('labeled.png', :interlace => true)
+# # Select the dimension to process
+# sel_dim = 1 # No hay manera de extraer eso del NIFTI. Para axiales parece que 1=sagital, 2=coronal, 3=axial
+# # Select slice to process
+# sel_slice = 142
+
+# anatomico_2d_slice = get_2d_slice(anatomico_3d_nifti, sel_dim, sel_slice)
+# hipocampos_2d_slice = get_2d_slice(hipocampos_3d_nifti, sel_dim, sel_slice)
+
+# # Overlay hippocampus label map and flip for display
+# labeled_png = generate_label_map_png(anatomico_2d_slice, hipocampos_2d_slice, LHipp_label).flip_horizontally!
+# # Save Labeled PNG
+# labeled_png.save('labeled.png', :interlace => true)
