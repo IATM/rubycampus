@@ -22,7 +22,7 @@ option_parser = OptionParser.new do |opts|
     options[:orientation] = orientation
   end
   
-  opts.on("-s", "--studyInfo patName,patId,studyDesc,studyDate", Array, "The study information for the report") do |study|
+  opts.on("-s", "--studyInfo patfName,patlName,patId,studyDate", Array, "The study information for the report") do |study|
       options[:study] = study
   end
    
@@ -168,6 +168,7 @@ hipocampos_3d_nifti = read_nifti(hipocampos_nii)
 	# Save Labeled PNG
 	rh_labeled_png.save("rh_#{sel_dim}_labeled.png", :interlace => true)
 end
+
 
 # # Select the dimension to process
 # sel_dim = 1 # No hay manera de extraer eso del NIFTI. Para axiales parece que 1=sagital, 2=coronal, 3=axial
