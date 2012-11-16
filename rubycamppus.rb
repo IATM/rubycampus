@@ -47,17 +47,21 @@ def read_nifti(nii_file)
   NIFTI::NObject.new(nii_file, :narray => true).image.to_i
 end
 
-def get_2d_slice(ni3d, dim, slice_num)
+def get_2d_slice(ni3d, dim, slice_num,orientation)
   puts "Extracting 2D slice number #{slice_num} on dimension #{dim} for volume."
-  if dim == 1
-    ni3d[slice_num,true,true]
-  elsif dim == 2
-    ni3d[true,slice_num,true]
-  elsif dim == 3
-    ni3d[true,true,slice_num]
-  else
-    raise "No valid dimension specified for slice extraction"
-  end
+  #case orientation
+    #when 'axial'
+    if dim == 1
+      ni3d[slice_num,true,true]
+    elsif dim == 2
+      ni3d[true,slice_num,true]
+    elsif dim == 3
+      ni3d[true,true,slice_num]
+    else
+      raise "No valid dimension specified for slice extraction"
+    end
+    #when 'sagital'
+    #end
 end
 
 def png_from_nifti_img(ni2d) # Create PNG object from NIFTI image NArray 2D Image
@@ -124,6 +128,11 @@ bet = FSL::BET.new(original_image, options[:outputdir], {fi_threshold: 0.5, v_gr
 bet.command
 bet_image = bet.get_result
 
+case options[:orientation]
+when 'sagital'
+  `fslswapdim #{bet_image} -z -x y #{bet_image}`
+end
+
 # PERFORM 'FIRST' SEGMENTATION
 first = FSL::FIRST.new(bet_image, options[:outputdir]+'/test_brain_FIRST', {already_bet:true, structure: 'L_Hipp,R_Hipp'})
 first.command
@@ -152,8 +161,8 @@ hipocampos_3d_nifti = read_nifti(hipocampos_nii)
 (1..3).each do |sel_dim|
 	# Left Hippocampus
 	sel_slice = lh_cog.values[sel_dim-1]
- 	lh_anatomico_2d_slice = get_2d_slice(anatomico_3d_nifti, sel_dim, sel_slice)
-	lh_hipocampos_2d_slice = get_2d_slice(hipocampos_3d_nifti, sel_dim, sel_slice)
+ 	lh_anatomico_2d_slice = get_2d_slice(anatomico_3d_nifti, sel_dim, sel_slice, options[:orientation])
+	lh_hipocampos_2d_slice = get_2d_slice(hipocampos_3d_nifti, sel_dim, sel_slice, options[:orientation])
 	# Overlay hippocampus label map and flip for display
 	lh_labeled_png = generate_label_map_png(lh_anatomico_2d_slice, lh_hipocampos_2d_slice, LHipp_label).flip_horizontally!
 	# Save Labeled PNG
@@ -161,8 +170,8 @@ hipocampos_3d_nifti = read_nifti(hipocampos_nii)
 
 	# Right Hippocampus
 	sel_slice = rh_cog.values[sel_dim-1]
- 	rh_anatomico_2d_slice = get_2d_slice(anatomico_3d_nifti, sel_dim, sel_slice)
-	rh_hipocampos_2d_slice = get_2d_slice(hipocampos_3d_nifti, sel_dim, sel_slice)
+ 	rh_anatomico_2d_slice = get_2d_slice(anatomico_3d_nifti, sel_dim, sel_slice, options[:orientation])
+	rh_hipocampos_2d_slice = get_2d_slice(hipocampos_3d_nifti, sel_dim, sel_slice, options[:orientation])
 	# Overlay hippocampus label map and flip for display
 	rh_labeled_png = generate_label_map_png(rh_anatomico_2d_slice, rh_hipocampos_2d_slice, RHipp_label).flip_horizontally!
 	# Save Labeled PNG
