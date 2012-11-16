@@ -4,6 +4,31 @@ require 'fsl-ruby'
 require 'narray'
 require 'nifti'
 require 'chunky_png'
+require 'optparse'
+# Bring OptionParser into the namespace
+
+options = {}
+option_parser = OptionParser.new do |opts|
+  
+  opts.on("-f DICOMDIR", "The DICOM directory") do |dicomdir| 
+    options[:dicomdir] = dicomdir
+  end
+  
+  opts.on("-o OUTPUTDIR", "The output directory") do |outputdir| 
+    options[:outputdir] = outputdir
+  end
+  
+  opts.on("-d ORIENTATION", "The slices orientation, e.g. sagital, coronal or axial") do |orientation| 
+    options[:orientation] = orientation
+  end
+  
+  opts.on("-s", "--studyInfo patName,patId,studyDesc,studyDate", Array, "The study information for the report") do |study|
+      options[:study] = study
+  end
+   
+end
+
+option_parser.parse!
 
 LHipp_label = 17
 RHipp_label = 53
@@ -90,17 +115,17 @@ end
 #### END METHODS ####
 
 # CONVERT DICOM TO NIFTI
-dn = Dcm2nii::Runner.new('/Users/simonmd/Desktop/rubycamppus_tests/input/dicom',{anonymize: false, reorient_crop:false, reorient:false, output_dir: '/Users/simonmd/Desktop/rubycamppus_tests/output'}) # creates an instance of the DCM2NII runner
+dn = Dcm2nii::Runner.new(options[:dicomdir],{anonymize: false, reorient_crop:false, reorient:false, output_dir: options[:outputdir]}) # creates an instance of the DCM2NII runner
 dn.command # runs the utility
 original_image = dn.get_nii # Returns the generated nifti file
 
 # PERFORM BRAIN EXTRACTION
-bet = FSL::BET.new(original_image, '/Users/simonmd/Desktop/rubycamppus_tests/output', {fi_threshold: 0.5, v_gradient: 0})
+bet = FSL::BET.new(original_image, options[:outputdir], {fi_threshold: 0.5, v_gradient: 0})
 bet.command
 bet_image = bet.get_result
 
 # PERFORM 'FIRST' SEGMENTATION
-first = FSL::FIRST.new(bet_image, '/Users/simonmd/Desktop/rubycamppus_tests/output/test_brain_FIRST', {already_bet:true, structure: 'L_Hipp,R_Hipp'})
+first = FSL::FIRST.new(bet_image, options[:outputdir]+'/test_brain_FIRST', {already_bet:true, structure: 'L_Hipp,R_Hipp'})
 first.command
 first_images = first.get_result
 
