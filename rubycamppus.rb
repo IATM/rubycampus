@@ -9,23 +9,23 @@ require 'optparse'
 
 options = {}
 option_parser = OptionParser.new do |opts|
-  
-  opts.on("-f DICOMDIR", "The DICOM directory") do |dicomdir| 
+
+  opts.on("-f DICOMDIR", "The DICOM directory") do |dicomdir|
     options[:dicomdir] = dicomdir
   end
-  
-  opts.on("-o OUTPUTDIR", "The output directory") do |outputdir| 
+
+  opts.on("-o OUTPUTDIR", "The output directory") do |outputdir|
     options[:outputdir] = outputdir
   end
-  
-  opts.on("-d ORIENTATION", "The slices orientation, e.g. sagital, coronal or axial") do |orientation| 
+
+  opts.on("-d ORIENTATION", "The slices orientation, e.g. sagital, coronal or axial") do |orientation|
     options[:orientation] = orientation
   end
-  
+
   opts.on("-s", "--studyInfo patfName,patlName,patId,studyDate", Array, "The study information for the report") do |study|
       options[:study] = study
   end
-   
+
 end
 
 option_parser.parse!
@@ -60,6 +60,12 @@ def get_2d_slice(ni3d, dim, slice_num)
   end
 end
 
+def normalise(x,xmin,xmax,ymin,ymax)
+    xrange = xmax-xmin
+    yrange = ymax-ymin
+    ymin + (x-xmin) * (yrange.to_f / xrange)
+end
+
 def png_from_nifti_img(ni2d) # Create PNG object from NIFTI image NArray 2D Image
   puts "Creating PNG image for 2D nifti slice"
   # Create PNG
@@ -69,10 +75,10 @@ def png_from_nifti_img(ni2d) # Create PNG object from NIFTI image NArray 2D Imag
   png.height.times do |y|
     png.row(y).each_with_index do |pixel, x|
       val = ni2d[x,y]
-      png[x,y] = ChunkyPNG::Color.rgb(val, val, val)
+      valnorm = normalise(val, ni2d.min, ni2d.max, 0, 255).to_i
+      png[x,y] = ChunkyPNG::Color.rgb(valnorm, valnorm, valnorm)
     end
   end
-
   # return PNG
   return png
 end
@@ -142,7 +148,7 @@ rhipp_vol = FSL::Stats.new(first_images[:firstseg], false, {low_threshold: RHipp
 puts "Right hippocampal volume: #{rhipp_vol}"
 
 # Decompress files
-anatomico_nii = decompress(bet_image)
+anatomico_nii = decompress(original_image)
 hipocampos_nii= decompress(first_images[:firstseg])
 
 # Set  nifti file
