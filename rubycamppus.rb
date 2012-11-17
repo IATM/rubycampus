@@ -131,6 +131,8 @@ bet_image = bet.get_result
 case options[:orientation]
 when 'sagital'
   `fslswapdim #{bet_image} -z -x y #{bet_image}`
+when 'coronal'
+  `fslswapdim #{bet_image} x -z y #{bet_image}`
 end
 
 # PERFORM 'FIRST' SEGMENTATION
