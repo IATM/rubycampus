@@ -22,7 +22,7 @@ option_parser = OptionParser.new do |opts|
     options[:orientation] = orientation
   end
 
-  opts.on("-s", "--studyInfo patfName,patlName,patId,studyDate", Array, "The study information for the report") do |study|
+  opts.on("-s", "--studyInfo patfName,patlName,patId,studyDate, accessionNo", Array, "The study information for the report") do |study|
       options[:study] = study
   end
 
@@ -33,6 +33,11 @@ option_parser.parse!
 LHipp_label = 17
 RHipp_label = 53
 LabelColor = ChunkyPNG::Color.rgb(0,125,209)
+patfName = options[:study][0]
+patlName = options[:study][1]
+patId = options[:study][2]
+studyDate = options[:study][3]
+accessionNo = options[:study][4]
 
 # Decompress NIFTI .gz files
 def decompress(filename)
@@ -159,7 +164,7 @@ rhipp_vol = FSL::Stats.new(first_images[:firstseg], false, {low_threshold: RHipp
 puts "Right hippocampal volume: #{rhipp_vol}"
 
 # Decompress files
-anatomico_nii = decompress(original_image)
+anatomico_nii = decompress(bet_image)
 hipocampos_nii= decompress(first_images[:firstseg])
 
 # Set  nifti file
@@ -194,10 +199,10 @@ Prawn::Document.generate('report.pdf') do |pdf|
   pdf.move_down 10
 
   # Report Info
-  pdf.formatted_text [ { :text => "Accession No.: ", :styles => [:bold], size: 10 }, { :text => "Accession", size: 10 }]
-  pdf.formatted_text [ { :text => "Patient name: ", :styles => [:bold], size: 10 }, { :text => "Patient Name", :styles => [:bold], size: 10 }]
-  pdf.formatted_text [ { :text => "Patient ID: ", :styles => [:bold], size: 10 }, { :text => "Patient ID", size: 10 }]
-  pdf.formatted_text [ { :text => "Patient Birthdate: ", :styles => [:bold], size: 10 }, { :text => "Birthdate", size: 10 }]
+  pdf.formatted_text [ { :text => "Accession No.: ", :styles => [:bold], size: 10 }, { :text => "#{accessionNo}", size: 10 }]
+  pdf.formatted_text [ { :text => "Patient name: ", :styles => [:bold], size: 10 }, { :text => "#{patfName} #{patlName}", :styles => [:bold], size: 10 }]
+  pdf.formatted_text [ { :text => "Patient ID: ", :styles => [:bold], size: 10 }, { :text => "#{patId}", size: 10 }]
+  pdf.formatted_text [ { :text => "Patient Birthdate: ", :styles => [:bold], size: 10 }, { :text => "#{studyDate}", size: 10 }]
   pdf.move_down 5
 
   # SubTitle RH
@@ -224,6 +229,6 @@ Prawn::Document.generate('report.pdf') do |pdf|
 
 
   # Volumes Table
-  pdf.table([ ["Right Hippocampus volume", rhipp_vol + ' mm3'],
-              ["Left Hippocampus volume", lhipp_vol + ' mm3']])
+  pdf.table([ ["Right Hippocampus volume", "#{rhipp_vol} mm3"],
+                   ["Left Hippocampus volume", "#{lhipp_vol} mm3"]])
 end
