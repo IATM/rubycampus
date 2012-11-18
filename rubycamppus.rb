@@ -5,7 +5,7 @@ require 'narray'
 require 'nifti'
 require 'chunky_png'
 require 'optparse'
-# Bring OptionParser into the namespace
+require 'prawn'
 
 options = {}
 option_parser = OptionParser.new do |opts|
@@ -22,7 +22,7 @@ option_parser = OptionParser.new do |opts|
     options[:orientation] = orientation
   end
 
-  opts.on("-s", "--studyInfo patfName,patlName,patId,studyDate", Array, "The study information for the report") do |study|
+  opts.on("-s", "--studyInfo patfName,patlName,patId,studyDate, accessionNo", Array, "The study information for the report") do |study|
       options[:study] = study
   end
 
@@ -33,6 +33,11 @@ option_parser.parse!
 LHipp_label = 17
 RHipp_label = 53
 LabelColor = ChunkyPNG::Color.rgb(0,125,209)
+patfName = options[:study][0]
+patlName = options[:study][1]
+patId = options[:study][2]
+studyDate = options[:study][3]
+accessionNo = options[:study][4]
 
 # Decompress NIFTI .gz files
 def decompress(filename)
@@ -159,7 +164,7 @@ rhipp_vol = FSL::Stats.new(first_images[:firstseg], false, {low_threshold: RHipp
 puts "Right hippocampal volume: #{rhipp_vol}"
 
 # Decompress files
-anatomico_nii = decompress(original_image)
+anatomico_nii = decompress(bet_image)
 hipocampos_nii= decompress(first_images[:firstseg])
 
 # Set  nifti file
@@ -174,7 +179,7 @@ hipocampos_3d_nifti = read_nifti(hipocampos_nii)
 	# Overlay hippocampus label map and flip for display
 	lh_labeled_png = generate_label_map_png(lh_anatomico_2d_slice, lh_hipocampos_2d_slice, LHipp_label).flip_horizontally!
 	# Save Labeled PNG
-	lh_labeled_png.save("lh_#{sel_dim}_labeled.png", :interlace => true)
+	lh_labeled_png.save("lh_#{sel_dim}_labeled.png")
 
 	# Right Hippocampus
 	sel_slice = rh_cog.values[sel_dim-1]
@@ -183,19 +188,47 @@ hipocampos_3d_nifti = read_nifti(hipocampos_nii)
 	# Overlay hippocampus label map and flip for display
 	rh_labeled_png = generate_label_map_png(rh_anatomico_2d_slice, rh_hipocampos_2d_slice, RHipp_label).flip_horizontally!
 	# Save Labeled PNG
-	rh_labeled_png.save("rh_#{sel_dim}_labeled.png", :interlace => true)
+	rh_labeled_png.save("rh_#{sel_dim}_labeled.png")
 end
 
 
-# # Select the dimension to process
-# sel_dim = 1 # No hay manera de extraer eso del NIFTI. Para axiales parece que 1=sagital, 2=coronal, 3=axial
-# # Select slice to process
-# sel_slice = 142
+# Generate PDF
+Prawn::Document.generate('report.pdf') do |pdf|
+  # Title
+  pdf.text "Hippocampal Volume Analysis Report" , size: 15, style: :bold, :align => :center
+  pdf.move_down 10
 
-# anatomico_2d_slice = get_2d_slice(anatomico_3d_nifti, sel_dim, sel_slice)
-# hipocampos_2d_slice = get_2d_slice(hipocampos_3d_nifti, sel_dim, sel_slice)
+  # Report Info
+  pdf.formatted_text [ { :text => "Accession No.: ", :styles => [:bold], size: 10 }, { :text => "#{accessionNo}", size: 10 }]
+  pdf.formatted_text [ { :text => "Patient name: ", :styles => [:bold], size: 10 }, { :text => "#{patfName} #{patlName}", :styles => [:bold], size: 10 }]
+  pdf.formatted_text [ { :text => "Patient ID: ", :styles => [:bold], size: 10 }, { :text => "#{patId}", size: 10 }]
+  pdf.formatted_text [ { :text => "Patient Birthdate: ", :styles => [:bold], size: 10 }, { :text => "#{studyDate}", size: 10 }]
+  pdf.move_down 5
 
-# # Overlay hippocampus label map and flip for display
-# labeled_png = generate_label_map_png(anatomico_2d_slice, hipocampos_2d_slice, LHipp_label).flip_horizontally!
-# # Save Labeled PNG
-# labeled_png.save('labeled.png', :interlace => true)
+  # SubTitle RH
+  pdf.text "Right Hippocampus" , size: 13, style: :bold, :align => :center
+  pdf.move_down 5
+
+  # Images RH
+  pdf.image "rh_1_labeled.png", :width => 200, :height => 200, :position => 20
+  pdf.move_up 200
+  pdf.image "rh_2_labeled.png", :width => 150, :height => 100, :position => 210
+  pdf.image "rh_3_labeled.png", :width => 150, :height => 100, :position => 210
+  pdf.move_down 5
+
+  # SubTitle LH
+  pdf.text "Left Hippocampus" , size: 13, style: :bold, :align => :center
+  pdf.move_down 5
+
+  # Images LH
+  pdf.image "lh_1_labeled.png", :width => 200, :height => 200, :position => 20
+  pdf.move_up 200
+  pdf.image "lh_2_labeled.png", :width => 150, :height => 100, :position => 210
+  pdf.image "lh_3_labeled.png", :width => 150, :height => 100, :position => 210
+  pdf.move_down 5
+
+
+  # Volumes Table
+  pdf.table([ ["Right Hippocampus volume", "#{rhipp_vol} mm3"],
+                   ["Left Hippocampus volume", "#{lhipp_vol} mm3"]])
+end
