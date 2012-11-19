@@ -160,9 +160,9 @@ puts "Left Hippocampus center of gravity voxel coordinates: #{lh_cog}"
 puts "Right Hippocampus center of gravity voxel coordinates: #{rh_cog}"
 
 # Get Hippocampal volumes
-lhipp_vol = FSL::Stats.new(first_images[:firstseg], false, {low_threshold: LHipp_label - 0.5, up_threshold: LHipp_label + 0.5, voxels_nonzero: true}).command.split[0].to_i
+lhipp_vol = FSL::Stats.new(first_images[:firstseg], false, {low_threshold: LHipp_label - 0.5, up_threshold: LHipp_label + 0.5, voxels_nonzero: true}).command.split[1].to_i
 puts "Left hippocampal volume: #{lhipp_vol}"
-rhipp_vol = FSL::Stats.new(first_images[:firstseg], false, {low_threshold: RHipp_label - 0.5, up_threshold: RHipp_label + 0.5, voxels_nonzero: true}).command.split[0].to_i
+rhipp_vol = FSL::Stats.new(first_images[:firstseg], false, {low_threshold: RHipp_label - 0.5, up_threshold: RHipp_label + 0.5, voxels_nonzero: true}).command.split[1].to_i
 puts "Right hippocampal volume: #{rhipp_vol}"
 
 # Decompress files
