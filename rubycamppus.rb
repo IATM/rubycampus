@@ -129,6 +129,8 @@ def coord_map(coord)
 end
 #### END METHODS ####
 
+beginning_time = Time.now
+
 # CONVERT DICOM TO NIFTI
 dn = Dcm2nii::Runner.new(options[:dicomdir],{anonymize: false, reorient_crop:false, reorient:false, output_dir: options[:outputdir]}) # creates an instance of the DCM2NII runner
 dn.command # runs the utility
@@ -179,7 +181,7 @@ hipocampos_3d_nifti = read_nifti(hipocampos_nii)
 	# Overlay hippocampus label map and flip for display
 	lh_labeled_png = generate_label_map_png(lh_anatomico_2d_slice, lh_hipocampos_2d_slice, LHipp_label).flip_horizontally!
 	# Save Labeled PNG
-	lh_labeled_png.save("lh_#{sel_dim}_labeled.png")
+	lh_labeled_png.save("#{options[:outputdir]}/lh_#{sel_dim}_labeled.png")
 
 	# Right Hippocampus
 	sel_slice = rh_cog.values[sel_dim-1]
@@ -188,12 +190,12 @@ hipocampos_3d_nifti = read_nifti(hipocampos_nii)
 	# Overlay hippocampus label map and flip for display
 	rh_labeled_png = generate_label_map_png(rh_anatomico_2d_slice, rh_hipocampos_2d_slice, RHipp_label).flip_horizontally!
 	# Save Labeled PNG
-	rh_labeled_png.save("rh_#{sel_dim}_labeled.png")
+      rh_labeled_png.save("#{options[:outputdir]}/rh_#{sel_dim}_labeled.png")
 end
 
 
 # Generate PDF
-Prawn::Document.generate('report.pdf') do |pdf|
+Prawn::Document.generate("#{options[:outputdir]}/report.pdf") do |pdf|
   # Title
   pdf.text "Hippocampal Volume Analysis Report" , size: 15, style: :bold, :align => :center
   pdf.move_down 10
@@ -210,10 +212,10 @@ Prawn::Document.generate('report.pdf') do |pdf|
   pdf.move_down 5
 
   # Images RH
-  pdf.image "rh_1_labeled.png", :width => 200, :height => 200, :position => 20
+  pdf.image "#{options[:outputdir]}/rh_3_labeled.png", :width => 200, :height => 200, :position => 20
   pdf.move_up 200
-  pdf.image "rh_2_labeled.png", :width => 150, :height => 100, :position => 210
-  pdf.image "rh_3_labeled.png", :width => 150, :height => 100, :position => 210
+  pdf.image "#{options[:outputdir]}/rh_2_labeled.png", :width => 150, :height => 100, :position => 210
+  pdf.image "#{options[:outputdir]}/rh_1_labeled.png", :width => 150, :height => 100, :position => 210
   pdf.move_down 5
 
   # SubTitle LH
@@ -221,10 +223,10 @@ Prawn::Document.generate('report.pdf') do |pdf|
   pdf.move_down 5
 
   # Images LH
-  pdf.image "lh_1_labeled.png", :width => 200, :height => 200, :position => 20
+  pdf.image "#{options[:outputdir]}/lh_3_labeled.png", :width => 200, :height => 200, :position => 20
   pdf.move_up 200
-  pdf.image "lh_2_labeled.png", :width => 150, :height => 100, :position => 210
-  pdf.image "lh_3_labeled.png", :width => 150, :height => 100, :position => 210
+  pdf.image "#{options[:outputdir]}/lh_2_labeled.png", :width => 150, :height => 100, :position => 210
+  pdf.image "#{options[:outputdir]}/lh_1_labeled.png", :width => 150, :height => 100, :position => 210
   pdf.move_down 5
 
 
@@ -232,3 +234,8 @@ Prawn::Document.generate('report.pdf') do |pdf|
   pdf.table([ ["Right Hippocampus volume", "#{rhipp_vol} mm3"],
                    ["Left Hippocampus volume", "#{lhipp_vol} mm3"]])
 end
+
+end_time = Time.now
+puts "Time elapsed #{(end_time - beginning_time)} seconds"
+
+
