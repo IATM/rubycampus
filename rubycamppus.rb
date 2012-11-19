@@ -32,7 +32,7 @@ option_parser.parse!
 
 LHipp_label = 17
 RHipp_label = 53
-LabelColor = ChunkyPNG::Color.rgb(0,125,209)
+LabelColor = ChunkyPNG::Color.rgb(255,0,0)
 patfName = options[:study][0]
 patlName = options[:study][1]
 patId = options[:study][2]
