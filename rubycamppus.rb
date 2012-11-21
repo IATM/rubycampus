@@ -1,4 +1,7 @@
 #!/usr/bin/env ruby
+
+# Modules required:
+require 'rubygems'
 require 'dcm2nii-ruby'
 require 'fsl-ruby'
 require 'narray'
