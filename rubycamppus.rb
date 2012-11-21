@@ -163,9 +163,12 @@ puts "Left Hippocampus center of gravity voxel coordinates: #{lh_cog}"
 puts "Right Hippocampus center of gravity voxel coordinates: #{rh_cog}"
 
 # Get Hippocampal volumes
-lhipp_vol = FSL::Stats.new(first_images[:firstseg], false, {low_threshold: LHipp_label - 0.5, up_threshold: LHipp_label + 0.5, voxels_nonzero: true}).command.split[1].to_i
+lhipp_vol_mm = FSL::Stats.new(first_images[:firstseg], false, {low_threshold: LHipp_label - 0.5, up_threshold: LHipp_label + 0.5, voxels_nonzero: true}).command.split[1]
+lhipp_vol = sprintf('%.2f', (lhipp_vol_mm.to_f/1000))
 puts "Left hippocampal volume: #{lhipp_vol}"
-rhipp_vol = FSL::Stats.new(first_images[:firstseg], false, {low_threshold: RHipp_label - 0.5, up_threshold: RHipp_label + 0.5, voxels_nonzero: true}).command.split[1].to_i
+
+rhipp_vol_mm = FSL::Stats.new(first_images[:firstseg], false, {low_threshold: RHipp_label - 0.5, up_threshold: RHipp_label + 0.5, voxels_nonzero: true}).command.split[1]
+rhipp_vol = sprintf('%.2f', (rhipp_vol_mm.to_f/1000))
 puts "Right hippocampal volume: #{rhipp_vol}"
 
 # Decompress files
@@ -234,11 +237,9 @@ Prawn::Document.generate("#{options[:outputdir]}/report.pdf") do |pdf|
 
 
   # Volumes Table
-  pdf.table([ ["Right Hippocampus volume", "#{rhipp_vol} mm3"],
-                   ["Left Hippocampus volume", "#{lhipp_vol} mm3"]])
+  pdf.table([ ["Right Hippocampus volume", "#{rhipp_vol} cm3"],
+                   ["Left Hippocampus volume", "#{lhipp_vol} cm3"]])
 end
 
 end_time = Time.now
 puts "Time elapsed #{(end_time - beginning_time)} seconds"
-
-
