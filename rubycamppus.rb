@@ -171,6 +171,10 @@ rhipp_vol_mm = FSL::Stats.new(first_images[:firstseg], false, {low_threshold: RH
 rhipp_vol = sprintf('%.2f', (rhipp_vol_mm.to_f/1000))
 puts "Right hippocampal volume: #{rhipp_vol}"
 
+File.open("epicampus.txt", 'a') do |file|
+  file << "#{accessionNo}\t#{lhipp_vol}\t#{rhipp_vol}\n"
+end
+
 # Decompress files
 anatomico_nii = decompress(bet_image)
 hipocampos_nii= decompress(first_images[:firstseg])
@@ -203,18 +207,18 @@ end
 # Generate PDF
 Prawn::Document.generate("#{options[:outputdir]}/report.pdf") do |pdf|
   # Title
-  pdf.text "Hippocampal Volume Analysis Report" , size: 15, style: :bold, :align => :center
+  pdf.text "Reporte de analisis del volumen hipocampal" , size: 15, style: :bold, :align => :center
   pdf.move_down 10
 
   # Report Info
-  pdf.formatted_text [ { :text => "Accession No.: ", :styles => [:bold], size: 10 }, { :text => "#{accessionNo}", size: 10 }]
-  pdf.formatted_text [ { :text => "Patient name: ", :styles => [:bold], size: 10 }, { :text => "#{patfName} #{patlName}", :styles => [:bold], size: 10 }]
-  pdf.formatted_text [ { :text => "Patient ID: ", :styles => [:bold], size: 10 }, { :text => "#{patId}", size: 10 }]
-  pdf.formatted_text [ { :text => "Patient Birthdate: ", :styles => [:bold], size: 10 }, { :text => "#{studyDate}", size: 10 }]
+  pdf.formatted_text [ { :text => "Codigo: ", :styles => [:bold], size: 10 }, { :text => "#{accessionNo}", size: 10 }]
+  pdf.formatted_text [ { :text => "Nombre del paciente: ", :styles => [:bold], size: 10 }, { :text => "#{patfName} #{patlName}", :styles => [:bold], size: 10 }]
+  pdf.formatted_text [ { :text => "Identificacion del Paciente: ", :styles => [:bold], size: 10 }, { :text => "#{patId}", size: 10 }]
+  pdf.formatted_text [ { :text => "Fecha de nacimiento: ", :styles => [:bold], size: 10 }, { :text => "#{studyDate}", size: 10 }]
   pdf.move_down 5
 
   # SubTitle RH
-  pdf.text "Right Hippocampus" , size: 13, style: :bold, :align => :center
+  pdf.text "Hipocampo Derecho" , size: 13, style: :bold, :align => :center
   pdf.move_down 5
 
   # Images RH
@@ -225,7 +229,7 @@ Prawn::Document.generate("#{options[:outputdir]}/report.pdf") do |pdf|
   pdf.move_down 5
 
   # SubTitle LH
-  pdf.text "Left Hippocampus" , size: 13, style: :bold, :align => :center
+  pdf.text "Hipocampo izquierdo" , size: 13, style: :bold, :align => :center
   pdf.move_down 5
 
   # Images LH
@@ -237,8 +241,8 @@ Prawn::Document.generate("#{options[:outputdir]}/report.pdf") do |pdf|
 
 
   # Volumes Table
-  pdf.table([ ["Right Hippocampus volume", "#{rhipp_vol} cm3"],
-                   ["Left Hippocampus volume", "#{lhipp_vol} cm3"]])
+  pdf.table([ ["Volumen del hipocampo derecho", "#{rhipp_vol} cm3"],
+                   ["Volumen del hipocampo izquierdo", "#{lhipp_vol} cm3"]])
 end
 
 end_time = Time.now
